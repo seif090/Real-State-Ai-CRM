@@ -1,0 +1,372 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  SALES_AGENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+}
+
+enum LeadSource {
+  WHATSAPP
+  MANUAL
+  IMPORT
+}
+
+enum LeadIntent {
+  BUY
+  RENT
+  INVEST
+  UNKNOWN
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  VIEWING_SCHEDULED
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum LeadTemperature {
+  COLD
+  WARM
+  HOT
+}
+
+enum PropertyType {
+  APARTMENT
+  VILLA
+  TOWNHOUSE
+  OFFICE
+  SHOP
+  LAND
+  OTHER
+}
+
+enum ListingType {
+  SALE
+  RENT
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+  RENTED
+  INACTIVE
+}
+
+enum DealStage {
+  LEAD
+  QUALIFIED
+  VIEWING
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum ConversationChannel {
+  WHATSAPP
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum SenderType {
+  CUSTOMER
+  AGENT
+  SYSTEM
+  AI
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum AiRunType {
+  CONVERSATION_ANALYSIS
+  PROPERTY_MATCHING
+}
+
+enum AiRunStatus {
+  SUCCEEDED
+  FAILED
+  FALLBACK
+}
+
+model Company {
+  id               String             @id @default(cuid())
+  name             String
+  slug             String             @unique
+  country          String?
+  timezone         String?
+  status           CompanyStatus      @default(TRIAL)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  users            User[]
+  leads            Lead[]
+  properties       Property[]
+  deals            Deal[]
+  conversations    Conversation[]
+  leadTags         LeadTag[]
+  dealStageHistory DealStageHistory[]
+  aiRuns           AiRun[]
+}
+
+model User {
+  id                String      @id @default(cuid())
+  companyId         String?
+  fullName          String
+  email             String      @unique
+  phone             String?
+  passwordHash      String
+  role              UserRole
+  status            UserStatus  @default(ACTIVE)
+  lastLoginAt       DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  company           Company?    @relation(fields: [companyId], references: [id])
+  assignedLeads     Lead[]      @relation("AssignedLeads")
+  createdProperties Property[]  @relation("PropertyCreator")
+  ownedDeals        Deal[]      @relation("DealOwner")
+  leadNotes         LeadNote[]
+  messages          Message[]
+}
+
+model Lead {
+  id                String           @id @default(cuid())
+  companyId         String
+  assignedToUserId  String?
+  source            LeadSource       @default(MANUAL)
+  fullName          String?
+  phone             String
+  email             String?
+  budgetMin         Decimal?
+  budgetMax         Decimal?
+  preferredLocation String?
+  propertyType      PropertyType?
+  intent            LeadIntent       @default(UNKNOWN)
+  status            LeadStatus       @default(NEW)
+  temperature       LeadTemperature  @default(COLD)
+  lastContactAt     DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  company           Company          @relation(fields: [companyId], references: [id])
+  assignedTo        User?            @relation("AssignedLeads", fields: [assignedToUserId], references: [id])
+  notes             LeadNote[]
+  leadTags          LeadTagOnLead[]
+  deals             Deal[]
+  conversations     Conversation[]
+  aiRuns            AiRun[]
+  aiRecommendations AiPropertyRecommendation[]
+
+  @@unique([companyId, phone])
+  @@index([companyId, status])
+  @@index([assignedToUserId])
+}
+
+model LeadNote {
+  id           String   @id @default(cuid())
+  leadId       String
+  authorUserId String
+  content      String
+  createdAt    DateTime @default(now())
+  lead         Lead     @relation(fields: [leadId], references: [id])
+  author       User     @relation(fields: [authorUserId], references: [id])
+}
+
+model LeadTag {
+  id        String          @id @default(cuid())
+  companyId String
+  name      String
+  company   Company         @relation(fields: [companyId], references: [id])
+  leads     LeadTagOnLead[]
+
+  @@unique([companyId, name])
+}
+
+model LeadTagOnLead {
+  leadId    String
+  leadTagId String
+  lead      Lead    @relation(fields: [leadId], references: [id])
+  leadTag   LeadTag @relation(fields: [leadTagId], references: [id])
+
+  @@id([leadId, leadTagId])
+}
+
+model Property {
+  id              String         @id @default(cuid())
+  companyId       String
+  code            String?
+  title           String
+  locationText    String
+  propertyType    PropertyType
+  listingType     ListingType
+  price           Decimal
+  currency        String         @default("EGP")
+  areaSqm         Float?
+  bedrooms        Int?
+  bathrooms       Int?
+  description     String?
+  status          PropertyStatus @default(AVAILABLE)
+  ownerName       String?
+  ownerPhone      String?
+  createdByUserId String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  company         Company        @relation(fields: [companyId], references: [id])
+  createdBy       User           @relation("PropertyCreator", fields: [createdByUserId], references: [id])
+  media           PropertyMedia[]
+  deals           Deal[]
+  aiRecommendations AiPropertyRecommendation[]
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+}
+
+model PropertyMedia {
+  id         String   @id @default(cuid())
+  propertyId String
+  fileUrl    String
+  sortOrder  Int      @default(0)
+  property   Property @relation(fields: [propertyId], references: [id])
+}
+
+model Deal {
+  id                String      @id @default(cuid())
+  companyId         String
+  leadId            String
+  propertyId        String?
+  ownerUserId       String
+  stage             DealStage   @default(LEAD)
+  value             Decimal?
+  expectedCloseDate DateTime?
+  closedAt          DateTime?
+  lossReason        String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  company           Company     @relation(fields: [companyId], references: [id])
+  lead              Lead        @relation(fields: [leadId], references: [id])
+  property          Property?   @relation(fields: [propertyId], references: [id])
+  owner             User        @relation("DealOwner", fields: [ownerUserId], references: [id])
+  stageHistory      DealStageHistory[]
+
+  @@index([companyId, stage])
+  @@index([ownerUserId])
+}
+
+model DealStageHistory {
+  id          String    @id @default(cuid())
+  companyId   String
+  dealId      String
+  fromStage   DealStage?
+  toStage     DealStage
+  changedById String?
+  changedAt   DateTime  @default(now())
+  company     Company   @relation(fields: [companyId], references: [id])
+  deal        Deal      @relation(fields: [dealId], references: [id])
+}
+
+model Conversation {
+  id               String               @id @default(cuid())
+  companyId        String
+  leadId           String
+  channel          ConversationChannel  @default(WHATSAPP)
+  externalThreadId String?
+  status           ConversationStatus   @default(OPEN)
+  lastMessageAt    DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  company          Company              @relation(fields: [companyId], references: [id])
+  lead             Lead                 @relation(fields: [leadId], references: [id])
+  messages         Message[]
+  aiRuns           AiRun[]
+}
+
+model Message {
+  id                String           @id @default(cuid())
+  conversationId    String
+  senderType        SenderType
+  senderUserId      String?
+  direction         MessageDirection
+  content           String
+  messageType       String           @default("text")
+  externalMessageId String?
+  deliveryStatus    DeliveryStatus   @default(PENDING)
+  createdAt         DateTime         @default(now())
+  conversation      Conversation     @relation(fields: [conversationId], references: [id])
+  senderUser        User?            @relation(fields: [senderUserId], references: [id])
+
+  @@index([conversationId, createdAt])
+}
+
+model AiRun {
+  id             String          @id @default(cuid())
+  companyId      String
+  leadId         String?
+  conversationId String?
+  taskType       AiRunType
+  status         AiRunStatus
+  provider       String
+  model          String?
+  inputSnapshot  Json
+  resultSnapshot Json
+  createdAt      DateTime        @default(now())
+  company        Company         @relation(fields: [companyId], references: [id])
+  lead           Lead?           @relation(fields: [leadId], references: [id])
+  conversation   Conversation?   @relation(fields: [conversationId], references: [id])
+  recommendations AiPropertyRecommendation[]
+
+  @@index([companyId, taskType, createdAt])
+  @@index([leadId])
+  @@index([conversationId])
+}
+
+model AiPropertyRecommendation {
+  id         String   @id @default(cuid())
+  aiRunId    String
+  leadId     String
+  propertyId String
+  score      Float
+  reason     String
+  createdAt  DateTime @default(now())
+  aiRun      AiRun    @relation(fields: [aiRunId], references: [id])
+  lead       Lead     @relation(fields: [leadId], references: [id])
+  property   Property @relation(fields: [propertyId], references: [id])
+
+  @@index([leadId, createdAt])
+  @@index([propertyId])
+}

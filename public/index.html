@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real Estate AI CRM</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div>
+          <p class="eyebrow">SaaS CRM</p>
+          <h1>منصة العقارات الذكية</h1>
+          <p class="muted">
+            إدارة العملاء والعقارات والصفقات ومحادثات واتساب من لوحة واحدة.
+          </p>
+        </div>
+
+        <div class="sidebar-card">
+          <div id="sessionState" class="session-state">غير مسجل الدخول</div>
+          <button id="logoutButton" class="ghost-button hidden" type="button">تسجيل الخروج</button>
+        </div>
+
+        <div class="sidebar-card">
+          <h2>الوحدات</h2>
+          <ul class="nav-list">
+            <li>لوحة المؤشرات</li>
+            <li>العملاء المحتملون</li>
+            <li>العقارات</li>
+            <li>الصفقات</li>
+            <li>المحادثات</li>
+          </ul>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="hero">
+          <div>
+            <p class="eyebrow">MVP Console</p>
+            <h2>واجهة تشغيل أولية فوق الـ API</h2>
+          </div>
+          <div id="statusBadge" class="badge">جاهز</div>
+        </section>
+
+        <section id="authSection" class="grid auth-grid">
+          <article class="panel">
+            <h3>إنشاء شركة</h3>
+            <form id="registerForm" class="form-grid">
+              <input name="companyName" placeholder="اسم الشركة" required />
+              <input name="companySlug" placeholder="company-slug" required />
+              <input name="fullName" placeholder="اسم المدير" required />
+              <input name="email" type="email" placeholder="البريد الإلكتروني" required />
+              <input name="password" type="password" placeholder="كلمة المرور" required />
+              <button type="submit">إنشاء الحساب</button>
+            </form>
+          </article>
+
+          <article class="panel">
+            <h3>تسجيل الدخول</h3>
+            <form id="loginForm" class="form-grid">
+              <input name="email" type="email" placeholder="البريد الإلكتروني" required />
+              <input name="password" type="password" placeholder="كلمة المرور" required />
+              <button type="submit">دخول</button>
+            </form>
+          </article>
+        </section>
+
+        <section id="dashboardSection" class="hidden">
+          <div class="stats-grid" id="statsGrid"></div>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h3>لوحة الصفقات</h3>
+              <button id="refreshBoard" class="ghost-button" type="button">تحديث اللوحة</button>
+            </div>
+            <div id="dealsBoard" class="kanban-board"></div>
+          </article>
+
+          <div class="grid forms-grid">
+            <article class="panel">
+              <h3>إضافة عميل محتمل</h3>
+              <form id="leadForm" class="form-grid">
+                <input name="fullName" placeholder="اسم العميل" />
+                <input name="phone" placeholder="رقم الهاتف" required />
+                <input name="email" type="email" placeholder="البريد الإلكتروني" />
+                <input name="preferredLocation" placeholder="الموقع المطلوب" />
+                <select name="intent">
+                  <option value="">نية العميل</option>
+                  <option value="BUY">شراء</option>
+                  <option value="RENT">إيجار</option>
+                  <option value="INVEST">استثمار</option>
+                </select>
+                <button type="submit">حفظ العميل</button>
+              </form>
+            </article>
+
+            <article class="panel">
+              <h3>إضافة عقار</h3>
+              <form id="propertyForm" class="form-grid">
+                <input name="title" placeholder="اسم العقار" required />
+                <input name="locationText" placeholder="الموقع" required />
+                <select name="propertyType" required>
+                  <option value="APARTMENT">شقة</option>
+                  <option value="VILLA">فيلا</option>
+                  <option value="TOWNHOUSE">تاون هاوس</option>
+                  <option value="OFFICE">مكتب</option>
+                  <option value="SHOP">محل</option>
+                  <option value="LAND">أرض</option>
+                  <option value="OTHER">أخرى</option>
+                </select>
+                <select name="listingType" required>
+                  <option value="SALE">بيع</option>
+                  <option value="RENT">إيجار</option>
+                </select>
+                <input name="price" type="number" min="0" placeholder="السعر" required />
+                <button type="submit">حفظ العقار</button>
+              </form>
+            </article>
+
+            <article class="panel">
+              <h3>إضافة صفقة</h3>
+              <form id="dealForm" class="form-grid">
+                <select name="leadId" id="dealLeadId" required></select>
+                <select name="propertyId" id="dealPropertyId"></select>
+                <select name="ownerUserId" id="dealOwnerUserId" required></select>
+                <select name="stage">
+                  <option value="LEAD">Lead</option>
+                  <option value="QUALIFIED">Qualified</option>
+                  <option value="VIEWING">Viewing</option>
+                  <option value="NEGOTIATION">Negotiation</option>
+                </select>
+                <input name="value" type="number" min="0" placeholder="قيمة الصفقة" />
+                <button type="submit">إنشاء الصفقة</button>
+              </form>
+            </article>
+          </div>
+
+          <div class="grid data-grid">
+            <article class="panel">
+              <div class="panel-head">
+                <h3>AI Runs</h3>
+                <button id="refreshAiRuns" class="ghost-button" type="button">تحديث</button>
+              </div>
+              <div id="aiRunsList" class="list-block"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <h3>العملاء المحتملون</h3>
+                <button id="refreshLeads" class="ghost-button" type="button">تحديث</button>
+              </div>
+              <div id="leadsList" class="list-block"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <h3>العقارات</h3>
+                <button id="refreshProperties" class="ghost-button" type="button">تحديث</button>
+              </div>
+              <div id="propertiesList" class="list-block"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <h3>الصفقات</h3>
+                <button id="refreshDeals" class="ghost-button" type="button">تحديث</button>
+              </div>
+              <div id="dealsList" class="list-block"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <h3>محادثات واتساب</h3>
+                <button id="refreshConversations" class="ghost-button" type="button">تحديث</button>
+              </div>
+              <div id="conversationsList" class="list-block"></div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <aside id="detailDrawer" class="detail-drawer hidden">
+      <div class="detail-head">
+        <div>
+          <p id="detailEyebrow" class="eyebrow">Details</p>
+          <h3 id="detailTitle">تفاصيل</h3>
+        </div>
+        <button id="closeDrawer" class="ghost-button" type="button">إغلاق</button>
+      </div>
+      <div id="detailBody" class="detail-body"></div>
+    </aside>
+
+    <div id="toast" class="toast hidden"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

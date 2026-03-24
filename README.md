@@ -110,3 +110,30 @@
 - الذكاء الاصطناعي في المرحلة الأولى يجب أن يكون مساعدًا للردود والتصنيف، وليس بديلًا كاملًا عن موظف المبيعات.
 - دعم تعدد الشركات `Multi-tenant` يجب أن يكون جزءًا من التصميم من البداية.
 - كل الرسائل والكيانات المرتبطة بها يجب أن تكون قابلة للتدقيق `Audit-friendly`.
+
+## النشر إلى Vercel
+
+1. تسجيل الدخول إلى Vercel:
+   - `npm i -g vercel`
+   - `vercel login`
+
+2. إعداد ملف `vercel.json` (موجود بالفعل) والوحدة التنفيذية:
+   - `api/index.ts` يصدّر `serverless(app)` بواسطة `serverless-http`.
+
+3. تأكد من أن `package.json` يحتوي على:
+   - `build`: `tsc -p tsconfig.json`
+   - `start`: `node dist/server.js` (لبيئة غير Vercel)
+
+4. ضبط متغيرات البيئة في Vercel Dashboard:
+   - `DATABASE_URL` (PostgreSQL أو أي مضيف خارجي)
+   - `JWT_SECRET`
+   - `OPENAI_API_KEY` (اختياري)
+   - `OPENAI_MODEL` (مثال: `gpt-4o`)
+
+5. دفع الى Vercel:
+   - `vercel --prod`
+
+6. تحقق من المسارات:
+   - `/api/health`, `/api/dashboard/analytics`, `/api/ai/leads/:leadId/match`.
+
+تنبيه: لا تستخدم SQLite في الإنتاج على Vercel، لأن الملفات المؤقتة تزول بعد كل تنفيذ؛ استخدم PostgreSQL أو PlanetScale أو Neon.
